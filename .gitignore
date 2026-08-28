@@ -1,0 +1,9 @@
+*.rbxl
+*.rbxlx
+*.rbxl.lock
+.DS_Store
+/build/
+.env
+
+# Local agent state
+.claude/scheduled_tasks.lock

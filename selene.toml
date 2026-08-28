@@ -1,0 +1,5 @@
+std = "roblox"
+
+# Vendored third-party code. Not ours to lint or reformat — keeping it byte-identical
+# to upstream is what makes it safe to re-download on a version bump.
+exclude = ["src/server/Packages/**"]
