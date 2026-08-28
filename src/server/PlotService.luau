@@ -239,19 +239,51 @@ end
 -- Bag helpers (used by ScavengeService too)
 --------------------------------------------------------------------
 
-function PlotService.AddToBag(player: Player, itemId: string): boolean
+-- Returns the new bag entry's uid, or nil if it wouldn't fit. Callers that only
+-- care whether it worked can still branch on truthiness; callers that need to
+-- track *which* item this was (HouseService, for at-risk raid loot) get the uid.
+function PlotService.AddToBag(player: Player, itemId: string): string?
 	local data = PlayerDataService.Get(player)
 	if not data then
-		return false
+		return nil
 	end
 
 	if #data.bag >= PlayerDataService.BagCapacity(data) then
-		return false
+		return nil
 	end
 
-	table.insert(data.bag, { uid = PlayerDataService.NewUid(), itemId = itemId })
+	local uid = PlayerDataService.NewUid()
+	table.insert(data.bag, { uid = uid, itemId = itemId })
 	PlotService.Sync(player)
-	return true
+	return uid
+end
+
+-- Removes specific bag entries by uid and returns how many were actually
+-- removed. Used when a raid is forfeited; the caller decides what happens to
+-- the items after that.
+function PlotService.RemoveFromBag(player: Player, uids: { string }): number
+	local data = PlayerDataService.Get(player)
+	if not data or #uids == 0 then
+		return 0
+	end
+
+	local doomed: { [string]: boolean } = {}
+	for _, uid in uids do
+		doomed[uid] = true
+	end
+
+	local removed = 0
+	for index = #data.bag, 1, -1 do
+		if doomed[data.bag[index].uid] then
+			table.remove(data.bag, index)
+			removed += 1
+		end
+	end
+
+	if removed > 0 then
+		PlotService.Sync(player)
+	end
+	return removed
 end
 
 local function findInBag(data: PlayerDataService.SaveData, uid: string): number?

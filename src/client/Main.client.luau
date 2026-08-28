@@ -197,6 +197,46 @@ upgradeClose.MouseButton1Click:Connect(function()
 end)
 
 --------------------------------------------------------------------
+-- Heat meter (raids)
+--------------------------------------------------------------------
+
+local heatFrame = Instance.new("Frame")
+heatFrame.Name = "HeatMeter"
+heatFrame.Size = UDim2.fromOffset(260, 46)
+heatFrame.Position = UDim2.new(0.5, -130, 0, 76)
+heatFrame.BackgroundColor3 = PANEL
+heatFrame.BorderSizePixel = 0
+heatFrame.Visible = false
+heatFrame.Parent = screen
+corner(heatFrame, 10)
+
+local heatLabel = Instance.new("TextLabel")
+heatLabel.Size = UDim2.new(1, -16, 0, 16)
+heatLabel.Position = UDim2.fromOffset(8, 5)
+heatLabel.BackgroundTransparency = 1
+heatLabel.Font = Enum.Font.GothamBold
+heatLabel.TextSize = 12
+heatLabel.TextColor3 = INK
+heatLabel.TextXAlignment = Enum.TextXAlignment.Left
+heatLabel.Text = "HIDDEN"
+heatLabel.Parent = heatFrame
+
+local heatTrack = Instance.new("Frame")
+heatTrack.Size = UDim2.new(1, -16, 0, 14)
+heatTrack.Position = UDim2.fromOffset(8, 24)
+heatTrack.BackgroundColor3 = Color3.fromRGB(222, 216, 205)
+heatTrack.BorderSizePixel = 0
+heatTrack.Parent = heatFrame
+corner(heatTrack, 6)
+
+local heatFill = Instance.new("Frame")
+heatFill.Size = UDim2.fromScale(0, 1)
+heatFill.BackgroundColor3 = ACCENT
+heatFill.BorderSizePixel = 0
+heatFill.Parent = heatTrack
+corner(heatFill, 6)
+
+--------------------------------------------------------------------
 -- Toasts
 --------------------------------------------------------------------
 
@@ -524,6 +564,34 @@ Remotes.Get("NearMiss").OnClientEvent:Connect(function(info)
 	local item = ItemDatabase.Get(info.itemId)
 	local name = if item then item.name else "it"
 	toast(("Walked away — valued %s at ~$%d"):format(name, info.perceived), "bad")
+end)
+
+-- Heat has to be visible or a catch reads as the game cheating rather than as a
+-- consequence the player chose. Hidden entirely at zero so it doesn't clutter
+-- the screen while you're nowhere near a house.
+Remotes.Get("Heat").OnClientEvent:Connect(function(heat, max, heatState)
+	local fraction = math.clamp(heat / math.max(max, 1), 0, 1)
+	heatFrame.Visible = heat > 0
+
+	heatFill.Size = UDim2.fromScale(fraction, 1)
+	heatFill.BackgroundColor3 = if heatState == "chasing"
+		then WARN
+		elseif heatState == "suspicious" then Color3.fromRGB(226, 176, 66)
+		else ACCENT
+
+	heatLabel.Text = if heatState == "chasing"
+		then "SEEN!"
+		elseif heatState == "suspicious" then "HEARD SOMETHING"
+		else "HIDDEN"
+end)
+
+Remotes.Get("Caught").OnClientEvent:Connect(function(lostCount)
+	heatFrame.Visible = false
+	if lostCount > 0 then
+		toast(("CAUGHT — dropped %d item%s"):format(lostCount, if lostCount == 1 then "" else "s"), "bad")
+	else
+		toast("CAUGHT — but your hands were empty", "bad")
+	end
 end)
 
 toast("Grab junk from the yard, then price it on your shelves.", "info")

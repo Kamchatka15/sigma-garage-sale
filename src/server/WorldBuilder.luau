@@ -312,6 +312,36 @@ local function buildHouse(parent: Instance): Model
 		prompt.Parent = spot
 	end
 
+	-- Patrol route. Ordered — the defender walks these in sequence and loops.
+	-- Waypoints rather than PathfindingService because this house is one room
+	-- with a doorway, so there is nothing to path around. DECISIONS.md flags
+	-- pathfinding as the escalation once interiors have real walls to navigate.
+	local waypoints = Instance.new("Folder")
+	waypoints.Name = "Waypoints"
+	waypoints.Parent = model
+
+	local ROUTE = {
+		Vector3.new(-10, 2, 8), -- inside, near the door
+		Vector3.new(-10, 2, -8), -- inside, back left
+		Vector3.new(10, 2, -8), -- inside, back right
+		Vector3.new(10, 2, 8), -- inside, front right
+		Vector3.new(18, 2, 17), -- yard, right side
+		Vector3.new(-18, 2, 17), -- yard, left side
+	}
+
+	for index, offset in ROUTE do
+		local point = makePart(
+			"Waypoint" .. index,
+			Vector3.new(1, 1, 1),
+			CFrame.new(origin + offset),
+			PALETTE.searchSpot,
+			waypoints
+		)
+		point.Transparency = 1
+		point.CanCollide = false
+		point:SetAttribute("Order", index)
+	end
+
 	local sign = makePart(
 		"HouseSign",
 		Vector3.new(20, 4, 0.5),
@@ -418,6 +448,26 @@ function WorldBuilder.GetSearchSpots(): { BasePart }
 			table.insert(result, child)
 		end
 	end
+	return result
+end
+
+function WorldBuilder.GetWaypoints(): { BasePart }
+	local house = WorldBuilder.GetHouse()
+	local folder = house and house:FindFirstChild("Waypoints")
+	if not folder then
+		return {}
+	end
+
+	local result: { BasePart } = {}
+	for _, child in folder:GetChildren() do
+		if child:IsA("BasePart") then
+			table.insert(result, child)
+		end
+	end
+
+	table.sort(result, function(a, b)
+		return (a:GetAttribute("Order") :: number) < (b:GetAttribute("Order") :: number)
+	end)
 	return result
 end
 

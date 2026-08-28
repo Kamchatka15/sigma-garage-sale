@@ -63,6 +63,35 @@ Config.SearchHoldDuration = 1.5 -- seconds to search one spot
 Config.HouseRestockInterval = 90 -- seconds before spots repopulate
 
 --------------------------------------------------------------------
+-- DEFENDERS AND HEAT
+--
+-- Heat is the readable risk dial (docs/GAME-DESIGN.md §5). It must always be
+-- something the player did — searching, being seen — never a random gotcha.
+-- Chase speed sits just under the default character walkspeed of 16 on purpose:
+-- a caught player should feel they were cornered, not simply outrun.
+--------------------------------------------------------------------
+
+-- DEV TOGGLE — must be false before launch. docs/FIRST-SESSION.md §3 requires
+-- the Fixer-Upper to be defender-free so a player's first raid can't fail. It
+-- is true now only because it is the only house that exists to test against.
+Config.DefenderOnFirstHouse = true
+
+Config.DefenderPatrolSpeed = 7
+Config.DefenderChaseSpeed = 14
+Config.DefenderSightRange = 36
+Config.DefenderCatchRange = 4.5
+Config.DefenderInvestigateTime = 6 -- seconds spent at a last-known position
+Config.DefenderLeash = 62 -- studs from the house before they give up and go home
+
+Config.HeatMax = 100
+Config.HeatFromSight = 44 -- per second while in line of sight
+Config.HeatFromSearch = 20 -- one-off, per spot searched
+Config.HeatDecay = 14 -- per second while unobserved
+Config.HeatSuspicious = 40 -- defender investigates your last known position
+Config.HeatChase = 78 -- defender pursues directly
+Config.CatchCooldown = 10 -- seconds before you may re-enter after a catch
+
+--------------------------------------------------------------------
 -- PRICING
 --------------------------------------------------------------------
 Config.MinPrice = 1

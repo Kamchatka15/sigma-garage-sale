@@ -20,6 +20,8 @@ local DOWNSTREAM = {
 	"Notify", -- transient toast message
 	"NearMiss", -- a customer declined; here's why
 	"Sale", -- a customer bought; celebrate
+	"Heat", -- (heat: number, max: number, state: string) raid awareness dial
+	"Caught", -- (lostCount: number) the defender got you
 }
 
 -- Client -> Server
