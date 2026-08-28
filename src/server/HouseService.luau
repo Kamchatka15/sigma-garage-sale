@@ -18,6 +18,7 @@ local Config = require(Shared:WaitForChild("Config"))
 local ItemDatabase = require(Shared:WaitForChild("ItemDatabase"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 
+local CommunityService = require(script.Parent:WaitForChild("CommunityService"))
 local PlayerDataService = require(script.Parent:WaitForChild("PlayerDataService"))
 local PlotService = require(script.Parent:WaitForChild("PlotService"))
 local WorldBuilder = require(script.Parent:WaitForChild("WorldBuilder"))
@@ -119,10 +120,28 @@ local function onSearched(spot: BasePart, player: Player)
 		return
 	end
 
+	-- Community junk gets a slice of the loot table, so finding another player's
+	-- creation in the wild is a thing that happens while you're doing something
+	-- else. That accident is the whole appeal.
+	local community = CommunityService.Roll(rng)
+	local itemId: string
+	local itemName: string
+	local credit: string? = nil
+
+	if community then
+		itemId = community.id
+		itemName = community.name
+		credit = community.creatorName
+		CommunityService.NoteFind(community.id)
+	else
+		local rolled = ItemDatabase.RollRandom(rng)
+		itemId = rolled.id
+		itemName = rolled.name
+	end
+
 	-- Check capacity BEFORE consuming the spot, so a full bag doesn't silently
 	-- destroy the item the player just spent 1.5 seconds finding.
-	local item = ItemDatabase.RollRandom(rng)
-	local uid = PlotService.AddToBag(player, item.id)
+	local uid = PlotService.AddToBag(player, itemId)
 	if not uid then
 		notify(player, "Your bag is full — come back for it.", "bad")
 		return
@@ -139,7 +158,11 @@ local function onSearched(spot: BasePart, player: Player)
 		table.insert(run, uid :: string)
 	end
 
-	notify(player, ("Found: %s"):format(item.name), "good")
+	if credit then
+		notify(player, ("Found: %s — made by %s"):format(itemName, credit), "good")
+	else
+		notify(player, ("Found: %s"):format(itemName), "good")
+	end
 end
 
 --------------------------------------------------------------------

@@ -23,6 +23,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local CommunityItems = require(Shared:WaitForChild("CommunityItems"))
 local Config = require(Shared:WaitForChild("Config"))
 
 local ProfileStore = require(script.Parent:WaitForChild("Packages"):WaitForChild("ProfileStore"))
@@ -247,6 +248,16 @@ end
 function PlayerDataService.RecordSale(player: Player, itemId: string, price: number)
 	local data = PlayerDataService.Get(player)
 	if not data then
+		return
+	end
+
+	-- Community junk never enters the knowledge table. The appraisal system only
+	-- works on a finite, learnable set; letting an open-ended player-created pool
+	-- in would mean nothing is ever fully learnable and the progression quietly
+	-- dies. Stats still count — you earned the money, it just taught you nothing.
+	if CommunityItems.IsCommunity(itemId) then
+		data.stats.totalSales += 1
+		data.stats.totalEarned += price
 		return
 	end
 

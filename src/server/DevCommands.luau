@@ -20,7 +20,10 @@ local RunService = game:GetService("RunService")
 local ServerStorage = game:GetService("ServerStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local CommunityItems = require(Shared:WaitForChild("CommunityItems"))
 local ItemDatabase = require(Shared:WaitForChild("ItemDatabase"))
+
+local CommunityService = require(script.Parent:WaitForChild("CommunityService"))
 
 local PlayerDataService = require(script.Parent:WaitForChild("PlayerDataService"))
 local PlotService = require(script.Parent:WaitForChild("PlotService"))
@@ -129,12 +132,38 @@ local function reset()
 	end
 end
 
+-- Stands in for the Robux purchase, which is deliberately unbuilt: charging
+-- money means ProcessReceipt, and OPERATING-MODEL.md §4 puts monetization in
+-- Tier 3. Pass nothing for a random combination.
+local function createJunk(adjective: number?, noun: number?, suffix: number?, rarity: string?)
+	local player = firstPlayer()
+	if not player then
+		print("[SMJ] createJunk: no player in the server yet")
+		return
+	end
+
+	local entry = CommunityService.Create(
+		player,
+		adjective or math.random(1, #CommunityItems.Adjectives),
+		noun or math.random(1, #CommunityItems.Nouns),
+		suffix or math.random(1, #CommunityItems.Suffixes),
+		rarity or "Junk"
+	)
+
+	if entry then
+		print(("[SMJ] createJunk: %q (%s, worth %d)"):format(entry.name, entry.rarity, entry.baseValue))
+	else
+		print("[SMJ] createJunk: rejected — bad indices, bad rarity, or pool is full")
+	end
+end
+
 local COMMANDS: { [string]: any } = {
 	give = give,
 	giveRandom = giveRandom,
 	cash = cash,
 	customer = customer,
 	reset = reset,
+	createJunk = createJunk,
 }
 
 function DevCommands.Init()

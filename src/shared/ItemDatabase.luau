@@ -6,6 +6,8 @@
 -- costs zero minutes to produce, and scales to 200 items as a writing task.
 -- See docs/GAME-DESIGN.md §9.
 
+local CommunityItems = require(script.Parent:WaitForChild("CommunityItems"))
+
 local ItemDatabase = {}
 
 export type Item = {
@@ -321,8 +323,30 @@ end
 
 ItemDatabase.All = items
 
+-- Falls back to the player-created registry so every existing call site —
+-- shelf rendering, pricing ceilings, customer decisions, client toasts —
+-- resolves community junk without needing to know it exists.
+--
+-- The dependency runs one way (ItemDatabase -> CommunityItems) and
+-- CommunityItems requires nothing, so there is no cycle.
 function ItemDatabase.Get(id: string): Item?
-	return byId[id]
+	local curated = byId[id]
+	if curated then
+		return curated
+	end
+
+	local community = CommunityItems.Get(id)
+	if community then
+		return {
+			id = community.id,
+			name = community.name,
+			desc = community.desc,
+			rarity = community.rarity,
+			baseValue = community.baseValue,
+		}
+	end
+
+	return nil
 end
 
 function ItemDatabase.GetRarityColor(rarity: string): Color3

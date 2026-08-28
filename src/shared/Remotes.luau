@@ -22,6 +22,7 @@ local DOWNSTREAM = {
 	"Sale", -- a customer bought; celebrate
 	"Heat", -- (heat: number, max: number, state: string) raid awareness dial
 	"Caught", -- (lostCount: number) the defender got you
+	"CommunitySync", -- ({ CommunityItem }) player-created junk currently live
 }
 
 -- Client -> Server

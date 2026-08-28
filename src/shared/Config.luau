@@ -92,6 +92,14 @@ Config.HeatChase = 78 -- defender pursues directly
 Config.CatchCooldown = 10 -- seconds before you may re-enter after a catch
 
 --------------------------------------------------------------------
+-- COMMUNITY JUNK (player-created)
+--------------------------------------------------------------------
+Config.CommunityLifetimeDays = 30 -- must be disclosed before any purchase
+Config.CommunityMaxLive = 60 -- ceiling on the live pool
+Config.CommunityDropChance = 0.12 -- chance a found item is a community one
+Config.CommunitySweepInterval = 300 -- seconds between expiry checks
+
+--------------------------------------------------------------------
 -- PRICING
 --------------------------------------------------------------------
 Config.MinPrice = 1

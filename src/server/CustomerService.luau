@@ -25,6 +25,7 @@ local ItemDatabase = require(Shared:WaitForChild("ItemDatabase"))
 local ReactionLines = require(Shared:WaitForChild("ReactionLines"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 
+local CommunityService = require(script.Parent:WaitForChild("CommunityService"))
 local PlayerDataService = require(script.Parent:WaitForChild("PlayerDataService"))
 local PlotService = require(script.Parent:WaitForChild("PlotService"))
 local WorldBuilder = require(script.Parent:WaitForChild("WorldBuilder"))
@@ -284,6 +285,7 @@ local function visit(plot: Model, player: Player)
 
 			PlayerDataService.AddCash(player, decision.price)
 			PlayerDataService.RecordSale(player, decision.itemId, decision.price)
+			CommunityService.NoteSale(decision.itemId)
 
 			speak(model, ReactionLines.Pick("HappyBuy"), Color3.fromRGB(30, 120, 50))
 

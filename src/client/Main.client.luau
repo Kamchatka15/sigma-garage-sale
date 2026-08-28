@@ -11,6 +11,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local CommunityItems = require(Shared:WaitForChild("CommunityItems"))
 local Config = require(Shared:WaitForChild("Config"))
 local ItemDatabase = require(Shared:WaitForChild("ItemDatabase"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
@@ -583,6 +584,14 @@ Remotes.Get("Heat").OnClientEvent:Connect(function(heat, max, heatState)
 		then "SEEN!"
 		elseif heatState == "suspicious" then "HEARD SOMETHING"
 		else "HIDDEN"
+end)
+
+-- Community junk has to resolve on the client too, or another player's creation
+-- shows up as a blank name in your bag. ItemDatabase.Get falls through to this
+-- registry, so populating it is all that's needed.
+Remotes.Get("CommunitySync").OnClientEvent:Connect(function(entries)
+	CommunityItems.ReplaceAll(entries)
+	renderAll()
 end)
 
 Remotes.Get("Caught").OnClientEvent:Connect(function(lostCount)
