@@ -27,14 +27,14 @@
 
 ## P0 — Blocking, do these first
 
-### 1. There is no version control
-`git rev-parse` confirms this is not a repo. Every design doc, every decision,
-and all code exist in exactly one place with no history. A single bad overwrite
-loses the lot — this session came close, which is why
-`docs/archive/GAME-DESIGN-selljunk-v1.md` was copied by hand before the rewrite.
+### 1. ~~There is no version control~~ — **DONE 2026-08-27**
+`git init` on `main`, initial commit `e86eb39` (34 files), pushed private to
+`git@github.com:Kamchatka15/sigma-garage-sale.git` over SSH (ed25519 key at
+`~/.ssh/id_ed25519`). Off-machine backup now exists.
 
-**Fix:** `git init`, commit, push private to GitHub. Ten minutes. Nothing else on
-this list is worth doing before it, and `ROADMAP.md` Phase 0 already listed it.
+This also unblocks parallel agent work via `git worktree`
+(`OPERATING-MODEL.md` §5) — with the Roblox caveat that only one worktree can be
+Rojo-synced to Studio at a time, so **playtesting stays serial**.
 
 ### 2. Verify persistence actually works
 The ProfileStore swap is unproven. Sequence:
