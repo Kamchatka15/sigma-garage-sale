@@ -49,6 +49,20 @@ Config.WalletMin = 25
 Config.WalletMax = 120
 
 --------------------------------------------------------------------
+-- HOUSES (raidable)
+--
+-- Populated spots are a RANGE, not a fixed count: a fixed number would let a
+-- player stop searching the moment they'd found it, which removes the decision
+-- the whole mechanic is built on.
+--------------------------------------------------------------------
+Config.HouseOrigin = Vector3.new(0, 0, -90)
+Config.HouseSearchSpots = 12 -- total spots built into the house
+Config.HouseSpotsPopulatedMin = 4 -- how many hold loot on a given restock
+Config.HouseSpotsPopulatedMax = 6
+Config.SearchHoldDuration = 1.5 -- seconds to search one spot
+Config.HouseRestockInterval = 90 -- seconds before spots repopulate
+
+--------------------------------------------------------------------
 -- PRICING
 --------------------------------------------------------------------
 Config.MinPrice = 1

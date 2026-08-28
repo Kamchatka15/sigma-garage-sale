@@ -27,6 +27,29 @@ local PALETTE = {
 	shelf = Color3.fromRGB(122, 88, 62),
 	sign = Color3.fromRGB(240, 226, 196),
 	junkyard = Color3.fromRGB(112, 104, 96),
+	houseFloor = Color3.fromRGB(150, 130, 110),
+	houseWall = Color3.fromRGB(198, 186, 170),
+	houseRoof = Color3.fromRGB(120, 78, 66),
+	fence = Color3.fromRGB(140, 116, 92),
+	searchSpot = Color3.fromRGB(168, 150, 128),
+}
+
+-- Where each search spot sits, relative to Config.HouseOrigin. Interior spots
+-- first, yard spots after. Names are player-facing — they show up in the
+-- "Search the Mailbox" prompt, so they carry the joke.
+local HOUSE_SPOTS = {
+	{ name = "Closet", offset = Vector3.new(-12, 2, -9) },
+	{ name = "Under the Bed", offset = Vector3.new(10, 1, -8) },
+	{ name = "Kitchen Cupboard", offset = Vector3.new(-12, 2, 6) },
+	{ name = "Bookshelf", offset = Vector3.new(12, 2, 0) },
+	{ name = "Laundry Basket", offset = Vector3.new(6, 1.5, 9) },
+	{ name = "Fireplace", offset = Vector3.new(0, 2, -10.5) },
+	{ name = "Mailbox", offset = Vector3.new(-20, 2, 18) },
+	{ name = "Trash Cans", offset = Vector3.new(20, 2, 16) },
+	{ name = "Doghouse", offset = Vector3.new(-20, 1.5, -8) },
+	{ name = "Garden Shed", offset = Vector3.new(20, 2, -14) },
+	{ name = "Kiddie Pool", offset = Vector3.new(0, 1, 18) },
+	{ name = "Car Trunk", offset = Vector3.new(-20, 2, 6) },
 }
 
 local function makePart(name: string, size: Vector3, cf: CFrame, color: Color3, parent: Instance): Part
@@ -180,6 +203,141 @@ local function buildJunkyard(parent: Instance)
 end
 
 --------------------------------------------------------------------
+-- The first raidable house — the Condemned Fixer-Upper
+--------------------------------------------------------------------
+
+local function buildHouse(parent: Instance): Model
+	local origin = Config.HouseOrigin
+
+	local model = Instance.new("Model")
+	model.Name = "House1"
+	model.Parent = parent
+
+	local floor = makePart(
+		"Floor",
+		Vector3.new(30, 1, 24),
+		CFrame.new(origin + Vector3.new(0, 0.5, 0)),
+		PALETTE.houseFloor,
+		model
+	)
+	model.PrimaryPart = floor
+
+	-- Walls. The front wall is two segments with a gap, which is the doorway.
+	makePart(
+		"WallBack",
+		Vector3.new(30, 10, 1),
+		CFrame.new(origin + Vector3.new(0, 5.5, -12)),
+		PALETTE.houseWall,
+		model
+	)
+	makePart(
+		"WallLeft",
+		Vector3.new(1, 10, 24),
+		CFrame.new(origin + Vector3.new(-15, 5.5, 0)),
+		PALETTE.houseWall,
+		model
+	)
+	makePart(
+		"WallRight",
+		Vector3.new(1, 10, 24),
+		CFrame.new(origin + Vector3.new(15, 5.5, 0)),
+		PALETTE.houseWall,
+		model
+	)
+	makePart(
+		"WallFrontL",
+		Vector3.new(12, 10, 1),
+		CFrame.new(origin + Vector3.new(-9, 5.5, 12)),
+		PALETTE.houseWall,
+		model
+	)
+	makePart(
+		"WallFrontR",
+		Vector3.new(12, 10, 1),
+		CFrame.new(origin + Vector3.new(9, 5.5, 12)),
+		PALETTE.houseWall,
+		model
+	)
+
+	-- Roof is see-through and non-colliding on purpose: a solid one reads better
+	-- from outside but puts the camera inside a box the moment you walk in.
+	local roof =
+		makePart("Roof", Vector3.new(32, 1, 26), CFrame.new(origin + Vector3.new(0, 11, 0)), PALETTE.houseRoof, model)
+	roof.Transparency = 0.7
+	roof.CanCollide = false
+
+	-- Yard fence, also with a gap — that gap is the gate you have to leave by
+	-- once the extraction rules exist.
+	makePart("FenceBack", Vector3.new(50, 4, 0.5), CFrame.new(origin + Vector3.new(0, 2, -22)), PALETTE.fence, model)
+	makePart("FenceLeft", Vector3.new(0.5, 4, 44), CFrame.new(origin + Vector3.new(-25, 2, 0)), PALETTE.fence, model)
+	makePart("FenceRight", Vector3.new(0.5, 4, 44), CFrame.new(origin + Vector3.new(25, 2, 0)), PALETTE.fence, model)
+	makePart(
+		"FenceFrontL",
+		Vector3.new(21, 4, 0.5),
+		CFrame.new(origin + Vector3.new(-14.5, 2, 22)),
+		PALETTE.fence,
+		model
+	)
+	makePart(
+		"FenceFrontR",
+		Vector3.new(21, 4, 0.5),
+		CFrame.new(origin + Vector3.new(14.5, 2, 22)),
+		PALETTE.fence,
+		model
+	)
+
+	local gate =
+		makePart("Gate", Vector3.new(8, 4, 0.5), CFrame.new(origin + Vector3.new(0, 2, 22)), PALETTE.fence, model)
+	gate.Transparency = 1
+	gate.CanCollide = false
+
+	local spots = Instance.new("Folder")
+	spots.Name = "SearchSpots"
+	spots.Parent = model
+
+	for index = 1, math.min(Config.HouseSearchSpots, #HOUSE_SPOTS) do
+		local def = HOUSE_SPOTS[index]
+		local spot =
+			makePart("Spot" .. index, Vector3.new(2, 2, 2), CFrame.new(origin + def.offset), PALETTE.searchSpot, spots)
+		spot:SetAttribute("SearchSpot", true)
+		spot:SetAttribute("SpotName", def.name)
+
+		local prompt = Instance.new("ProximityPrompt")
+		prompt.Name = "SearchPrompt"
+		prompt.ActionText = "Search"
+		prompt.ObjectText = def.name
+		prompt.HoldDuration = Config.SearchHoldDuration
+		prompt.MaxActivationDistance = 8
+		prompt.RequiresLineOfSight = false
+		prompt.Parent = spot
+	end
+
+	local sign = makePart(
+		"HouseSign",
+		Vector3.new(20, 4, 0.5),
+		CFrame.new(origin + Vector3.new(0, 8, 22.4)),
+		PALETTE.sign,
+		model
+	)
+
+	local gui = Instance.new("SurfaceGui")
+	gui.Face = Enum.NormalId.Front
+	gui.CanvasSize = Vector2.new(700, 140)
+	gui.Parent = sign
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.fromScale(1, 1)
+	label.BackgroundTransparency = 1
+	label.Font = Enum.Font.FredokaOne
+	label.TextScaled = true
+	label.TextColor3 = Color3.fromRGB(60, 45, 30)
+	label.Text = "THE FIXER-UPPER"
+	label.Parent = gui
+
+	return model
+end
+
+--------------------------------------------------------------------
 
 function WorldBuilder.Build(): Folder
 	local existing = workspace:FindFirstChild("World")
@@ -193,6 +351,7 @@ function WorldBuilder.Build(): Folder
 
 	buildGround(world)
 	buildJunkyard(world)
+	buildHouse(world)
 
 	local plots = Instance.new("Folder")
 	plots.Name = "Plots"
@@ -232,6 +391,31 @@ function WorldBuilder.GetPlots(): { Model }
 		local plot = plots:FindFirstChild("Plot" .. i)
 		if plot and plot:IsA("Model") then
 			table.insert(result, plot)
+		end
+	end
+	return result
+end
+
+function WorldBuilder.GetHouse(): Model?
+	local world = workspace:FindFirstChild("World")
+	if not world then
+		return nil
+	end
+	local house = world:FindFirstChild("House1")
+	return if house and house:IsA("Model") then house else nil
+end
+
+function WorldBuilder.GetSearchSpots(): { BasePart }
+	local house = WorldBuilder.GetHouse()
+	local folder = house and house:FindFirstChild("SearchSpots")
+	if not folder then
+		return {}
+	end
+
+	local result: { BasePart } = {}
+	for _, child in folder:GetChildren() do
+		if child:IsA("BasePart") and child:GetAttribute("SearchSpot") then
+			table.insert(result, child)
 		end
 	end
 	return result

@@ -6,8 +6,9 @@
 --   Remotes      creates the RemoteEvent folder clients are already waiting on
 --   WorldBuilder must run before any service that looks up plots or the yard
 --   PlayerData   must be ready before a player can be assigned a plot
+--   House        after WorldBuilder, which builds the spots it wires prompts to
 --   Customer     next, because its loops reference plots and player data
---   DevCommands  last; it only wires up _G.SMJ hooks into the services above
+--   DevCommands  last; it only wires ServerStorage.SMJDev into the services above
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -18,6 +19,7 @@ require(Shared:WaitForChild("Remotes"))
 local WorldBuilder = require(script.Parent:WaitForChild("WorldBuilder"))
 local PlayerDataService = require(script.Parent:WaitForChild("PlayerDataService"))
 local PlotService = require(script.Parent:WaitForChild("PlotService"))
+local HouseService = require(script.Parent:WaitForChild("HouseService"))
 local ScavengeService = require(script.Parent:WaitForChild("ScavengeService"))
 local CustomerService = require(script.Parent:WaitForChild("CustomerService"))
 local DevCommands = require(script.Parent:WaitForChild("DevCommands"))
@@ -26,6 +28,7 @@ WorldBuilder.Build()
 
 PlayerDataService.Init()
 PlotService.Init()
+HouseService.Init()
 ScavengeService.Init()
 CustomerService.Init()
 DevCommands.Init()
