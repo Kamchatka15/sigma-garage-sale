@@ -7,10 +7,17 @@
 -- player couldn't already trigger through the normal flow — it just skips
 -- the walk to the junkyard. Inert outside Studio: Init() no-ops entirely
 -- unless RunService:IsStudio() is true.
+--
+-- USAGE — Studio command bar, with the context dropdown set to **Server**:
+--   game.ServerStorage.SMJDev:Invoke("cash", 500)
+--   game.ServerStorage.SMJDev:Invoke("giveRandom", 5)
+--   game.ServerStorage.SMJDev:Invoke("customer")
+--   game.ServerStorage.SMJDev:Invoke("reset")
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local ServerStorage = game:GetService("ServerStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local ItemDatabase = require(Shared:WaitForChild("ItemDatabase"))
@@ -122,23 +129,49 @@ local function reset()
 	end
 end
 
+local COMMANDS: { [string]: any } = {
+	give = give,
+	giveRandom = giveRandom,
+	cash = cash,
+	customer = customer,
+	reset = reset,
+}
+
 function DevCommands.Init()
 	if not RunService:IsStudio() then
 		return
 	end
 
-	-- selene: allow(global_usage)
-	-- _G is the only channel the Studio command bar can reach into a running
-	-- server script from, so this is the sanctioned exception, not a slip.
-	_G.SMJ = {
-		give = give,
-		giveRandom = giveRandom,
-		cash = cash,
-		customer = customer,
-		reset = reset,
-	}
+	-- WHY A BindableFunction AND NOT `_G`:
+	-- The Studio command bar runs in a *different Luau environment* from game
+	-- scripts. It shares neither `_G` nor the `require` cache — a `require` from
+	-- the command bar returns a second, uninitialized copy of a module. What it
+	-- does share is the DataModel, which is why `workspace.Part:Destroy()` works
+	-- from there. So the bridge has to be an Instance.
+	--
+	-- An earlier version of this file used `_G.SMJ` and asserted in a comment
+	-- that it was "the only channel" available. That was wrong and `_G.SMJ` read
+	-- back nil in Studio every time. Verified 2026-08-27.
+	local bridge = Instance.new("BindableFunction")
+	bridge.Name = "SMJDev"
 
-	print("[SMJ] dev commands ready: _G.SMJ.give/giveRandom/cash/customer/reset")
+	bridge.OnInvoke = function(command: any, ...)
+		local fn = if type(command) == "string" then COMMANDS[command] else nil
+		if not fn then
+			local names = {}
+			for name in COMMANDS do
+				table.insert(names, name)
+			end
+			table.sort(names)
+			print(("[SMJ] unknown command %q — available: %s"):format(tostring(command), table.concat(names, ", ")))
+			return
+		end
+		fn(...)
+	end
+
+	bridge.Parent = ServerStorage
+
+	print('[SMJ] dev commands ready — e.g. game.ServerStorage.SMJDev:Invoke("giveRandom", 5)')
 end
 
 return DevCommands

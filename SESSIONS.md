@@ -89,3 +89,34 @@ enable Studio API access → join → earn cash → rejoin → cash survived.
 
 **Next:** verify persistence, then either schema v2 (docs/PERSISTENCE.md §3) or
 the v1.0 slice brief (docs/GAME-DESIGN.md §14).
+
+## 2026-08-27/28 — Session D (cont.) — API access fixed, dev-command bridge was broken
+**Changed:** "Enable Studio Access to API Services" turned on and saved in
+Experience Settings → Security. Output now confirms ProfileStore is targeting the
+real DataStore rather than the mock.
+
+**Why it mattered:** with that checkbox off, every save failed with
+`403: Cannot write to DataStore... API access is not enabled`, and the mock
+fallback made it look like saving worked. This is exactly the failure mode
+PlayerDataService.luau's own header warns about.
+
+**Bug found and fixed — `_G.SMJ` never worked.** Dev commands read back nil from
+the command bar, reproduced twice on clean sessions with the Server context
+confirmed. Root cause: the Studio command bar runs in a *different Luau
+environment* from game scripts — it shares neither `_G` nor the `require` cache
+(hence a fresh `require` returning an uninitialized module). It does share the
+DataModel. A comment in DevCommands.luau asserted the opposite; that assertion
+was never verified and was wrong.
+
+Fix: the bridge is now a BindableFunction at `ServerStorage.SMJDev`:
+```
+game.ServerStorage.SMJDev:Invoke("cash", 500)
+game.ServerStorage.SMJDev:Invoke("giveRandom", 5)
+```
+
+**STILL NOT VERIFIED:** the persistence round-trip. `cash(500)` → rejoin →
+still 500 has not been observed. The new bridge itself has also never run.
+
+**Next:** run the round-trip with the new Invoke syntax. If SMJDev is missing
+from ServerStorage, DevCommands.Init() didn't run — check Output for
+`[SMJ] dev commands ready`.

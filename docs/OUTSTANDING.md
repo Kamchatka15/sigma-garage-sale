@@ -36,12 +36,21 @@ This also unblocks parallel agent work via `git worktree`
 (`OPERATING-MODEL.md` §5) — with the Roblox caveat that only one worktree can be
 Rojo-synced to Studio at a time, so **playtesting stays serial**.
 
-### 2. Verify persistence actually works
-The ProfileStore swap is unproven. Sequence:
-1. Game Settings → Security → **Enable Studio Access to API Services**
-2. Play → `_G.SMJ.cash(500)` → stop → play again → is it still 500?
-3. If the output says `NOTHING WILL PERSIST`, the checkbox is off and the test
-   is meaningless
+### 2. Verify persistence actually works — half done
+- ✅ **API access enabled** (2026-08-27). Output confirms ProfileStore is on the
+  real DataStore, not the mock. This was silently discarding every save.
+- ✅ **Dev-command bridge fixed.** `_G.SMJ` never worked — the Studio command bar
+  runs in a separate Luau environment with no shared `_G` or `require` cache.
+  Replaced with a BindableFunction at `ServerStorage.SMJDev`.
+- ❌ **Round-trip still unobserved.**
+
+```lua
+-- command bar, context dropdown set to Server, while Play is running
+game.ServerStorage.SMJDev:Invoke("cash", 500)
+-- stop, Play again
+```
+Cash should still be 500. If `SMJDev` isn't in ServerStorage, `DevCommands.Init()`
+didn't run — check Output for `[SMJ] dev commands ready`.
 
 ### 3. Playtest the existing loop
 Per `SESSIONS.md` C, **scavenging, pricing, customers, sales, and upgrades have
